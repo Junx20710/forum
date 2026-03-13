@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: forum_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: forum_db
+    ports:
+      # 宿主机端口:容器端口
+      - "3309:3306"
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      # 将容器内的数据映射到当前目录下的 mysql_data 文件夹
+      - ./mysql_data:/var/lib/mysql  
