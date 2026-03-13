@@ -8,6 +8,7 @@ pymysql               # MySQL 数据库连接驱动
 # --- 安全与加密 ---
 pyjwt                 # JWT Token 签发与解析
 passlib[bcrypt]       # 工业级密码哈希处理
+cryptography>=3.4.7
 
 # --- 自动化测试 ---
 pytest                # 单元与集成测试框架
