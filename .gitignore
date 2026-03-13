@@ -7,3 +7,4 @@ allure-report/
 venv/
 .vscode/
 mysql_data/
+reports/
