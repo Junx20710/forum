@@ -52,5 +52,5 @@ jobs:
       if: always()
       uses: mgrybyk-org/allure-report-branch-action@v1
       with:
-        allure_results: allure-results
+        report_dir: allure-results
         gh_pages: gh-pages
