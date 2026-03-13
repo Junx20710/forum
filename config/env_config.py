@@ -1,7 +1,7 @@
 import os
 
 class Config:
-    BASE_URL = "http://127.0.0.1:5000"
+    BASE_URL = "http://127.0.0.1:8000"
 
     SECRET_KEY = os.getenv("FORUM_SECRET_KEY", "your-super-safe-and-long-secret-key-here")
 
