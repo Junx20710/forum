@@ -57,7 +57,7 @@ jobs:
         pytest --alluredir=./allure-results || true 
 
     - name: 发布 Allure 报告
-      if: always() # 无论测试通过与否，都要发布报告
+      if: always()
       uses: mgrybyk-org/allure-report-branch-action@v1
       with:
         report_dir: allure-results
