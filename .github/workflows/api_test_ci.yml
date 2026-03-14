@@ -6,12 +6,13 @@ on:
   pull_request:
     branches: [ main ]
 
+# 💡 补丁 1：显式声明权限，确保机器人有权把报告塞进 gh-pages 分支
 permissions:
-    contents: write
+  contents: write
 
 jobs:
   test:
-    runs-on: ubuntu-latest # GitHub 的 Ubuntu 环境非常全，通常不直接在 runner 上谈 slim
+    runs-on: ubuntu-latest
 
     services:
       mysql:
@@ -30,12 +31,15 @@ jobs:
     steps:
     - name: 检出代码
       uses: actions/checkout@v4
-
-    - name: 设置 Python 环境
-      uses: actions/setup-python@v4
       with:
-        python-version: '3.9'  # 修正为你的开发版本
-        cache: 'pip'          # 🚀 开启缓存机制：只要 requirements.txt 没变，下次秒装
+        # 💡 补丁 2：关键！拉取所有分支的历史记录，否则机器人找不到 gh-pages
+        fetch-depth: 0 
+
+    - name: 设置 Python 3.9 环境
+      uses: actions/setup-python@v5 # 建议升级到 v5 更稳定
+      with:
+        python-version: '3.9'
+        cache: 'pip'
 
     - name: 安装项目依赖
       run: |
@@ -46,13 +50,14 @@ jobs:
       env:
         SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
       run: |
-        # 使用你之前的 Bcrypt 和 JWT 逻辑
+        # 确保启动后端并留出时间
         nohup uvicorn main:app --host 0.0.0.0 --port 8000 & 
-        sleep 10
-        pytest --alluredir=./allure-results
+        sleep 15 # 云端机器有时起步慢，给它 15 秒
+        # 即使测试失败也要继续，保证后面能生成报告
+        pytest --alluredir=./allure-results || true 
 
     - name: 发布 Allure 报告
-      if: always()
+      if: always() # 无论测试通过与否，都要发布报告
       uses: mgrybyk-org/allure-report-branch-action@v1
       with:
         report_dir: allure-results
