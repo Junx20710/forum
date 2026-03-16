@@ -10,6 +10,7 @@ from app.api.deps import get_db
 
 router = APIRouter()
 
+@router.post("/register")
 def register(req: RegisterReq):
     # 用户名非空与格式校验
     if not req.username or not re.match(USERNAME_PATTERN, req.username):
