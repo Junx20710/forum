@@ -51,8 +51,14 @@ jobs:
         PYTHONPATH: .
       run: |
         # 💡 关键改动：路径从 main:app 变为 app.main:app
-        nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 & 
-        sleep 15
+        nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > backend.log 2>&1 & 
+        
+        sleep 5
+
+        echo "================ 后端启动日志 ================"
+        cat backend.log
+        echo "============================================="
+        sleep 10
         # 即使测试失败也继续，保证生成报告
         pytest --alluredir=./allure-results || true 
 
