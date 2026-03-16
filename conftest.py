@@ -4,7 +4,7 @@ import allure
 import uuid
 from utils.db_util import DBUtil
 import pymysql
-from config.env_config import Config
+from app.core.config import Config
 
 # 1. 基础连接：Session 级，整个测试周期只连一次
 @pytest.fixture(scope="session")
