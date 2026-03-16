@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-# 💡 补丁 1：显式声明权限，确保机器人有权把报告塞进 gh-pages 分支
 permissions:
   contents: write
 
@@ -32,11 +31,10 @@ jobs:
     - name: 检出代码
       uses: actions/checkout@v4
       with:
-        # 💡 补丁 2：关键！拉取所有分支的历史记录，否则机器人找不到 gh-pages
         fetch-depth: 0 
 
     - name: 设置 Python 3.9 环境
-      uses: actions/setup-python@v5 # 建议升级到 v5 更稳定
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
         cache: 'pip'
@@ -49,14 +47,16 @@ jobs:
     - name: 启动后端并运行测试
       env:
         SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+        # 💡 设置 PYTHONPATH 确保机器人能找到 app 包
+        PYTHONPATH: .
       run: |
-        # 确保启动后端并留出时间
-        nohup uvicorn main:app --host 0.0.0.0 --port 8000 & 
-        sleep 15 # 云端机器有时起步慢，给它 15 秒
-        # 即使测试失败也要继续，保证后面能生成报告
+        # 💡 关键改动：路径从 main:app 变为 app.main:app
+        nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 & 
+        sleep 15
+        # 即使测试失败也继续，保证生成报告
         pytest --alluredir=./allure-results || true 
 
-    - name: 渲染 Allure 报告 (整合历史数据)
+    - name: 渲染 Allure 报告
       uses: simple-elf/allure-report-action@master
       if: always()
       id: allure-report
@@ -66,7 +66,7 @@ jobs:
         allure_report: allure-report
         allure_history: allure-history
     
-    - name: 将报告推送到 gh-pages 分支 (自动创建)
+    - name: 推送报告到 gh-pages
       uses: peaceiris/actions-gh-pages@v3
       if: always()
       with:

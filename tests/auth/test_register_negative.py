@@ -2,7 +2,7 @@ import uuid
 import pytest
 import requests
 import allure
-from config.env_config import Config
+from app.core.config import Config
 
 # 每一个元组代表：（username, password, email，expected code，description）
 REGISTRATION_DDT_POOL = [

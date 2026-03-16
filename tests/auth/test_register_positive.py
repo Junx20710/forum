@@ -1,7 +1,7 @@
 import pytest
 import requests
 import allure
-from config.env_config import Config
+from app.core.config import Config
 
 @allure.epic("论坛系统测试")
 @allure.feature("用户认证模块")

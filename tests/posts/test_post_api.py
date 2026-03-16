@@ -1,7 +1,7 @@
 import pytest
 import requests
 import allure
-from config.env_config import Config
+from app.core.config import Config
 
 
 
