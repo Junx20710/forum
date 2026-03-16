@@ -5,7 +5,7 @@ import pymysql
 from app.schemas.post import PostCreateReq
 from app.api.deps import get_db, get_current_user
 
-router = APIRouter
+router = APIRouter()
 
 @router.post("/create")
 def create_post(req: PostCreateReq, user_id: int = Depends(get_current_user)):
