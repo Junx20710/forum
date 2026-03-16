@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Header, HTTPException, Depends
-from pydantic import BaseModel
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, ConfigDict
 import pymysql
 import bcrypt  # 引入加盐哈希库
 import jwt
@@ -7,6 +9,20 @@ from datetime import datetime, timedelta, timezone  # 现代时间处理
 import re
 from contextlib import asynccontextmanager
 from config.env_config import Config
+
+# ==================== FastAPI 应用实例定义  ====================
+app = FastAPI()
+
+# ==================== 全局校验错误处理器  ====================
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=200,
+        content={"code": 400, 
+                 "msg": "请求参数校验失败",
+                 "detail": exc.errors()},
+    )
+
 
 # ==================== 正则规则  ====================
 # 密码规则：8-16位，必须包含大小写字母、数字和特殊字符
@@ -65,7 +81,7 @@ async def lifespan(app: FastAPI):
 
     # 关闭阶段：可以在这里添加资源清理逻辑（如连接池关闭等）
 
-app = FastAPI(lifespan=lifespan)
+
 
 # ==================== 核心工具函数 ====================
 def get_db():
@@ -143,8 +159,9 @@ def login(req: LoginReq):
     return {"code": 401, "msg": "Invalid credentials"}
 
 class PostCreateReq(BaseModel):
-    title: str
-    content: str
+    model_config = ConfigDict(str_strip_whitespace=True)
+    title: str = Field(..., min_length=1, max_length=100)
+    content: str = Field(..., min_length=1)
 
 @app.post("/api/v2/posts/create")
 def create_post(req: PostCreateReq, user_id: int = Depends(get_current_user)):
@@ -165,4 +182,4 @@ def create_post(req: PostCreateReq, user_id: int = Depends(get_current_user)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=5000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
