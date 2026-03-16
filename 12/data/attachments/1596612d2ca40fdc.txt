@@ -1,0 +1,1 @@
+{'username': 'user_bba38f', 'password': 'Password123!', 'email': 'user_bba38f@test.com'}
