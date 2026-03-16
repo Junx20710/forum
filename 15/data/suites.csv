@@ -1,0 +1,53 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"
+        利用数据驱动验证发帖接口的边界值与鉴权拦截逻辑
+        ","2","发帖拦截校验：错误推测：标题和内容全为空格","tests.posts","Mon Mar 16 03:39:10 UTC 2026","broken","Mon Mar 16 03:39:10 UTC 2026","TestPostDynamic","test_post_api","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","1","注册异常校验: 非法密码：无特殊字符","tests.auth","Mon Mar 16 03:39:09 UTC 2026","broken","Mon Mar 16 03:39:09 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","4","注册异常校验: 非法密码：8-1位，边界值校验","tests.auth","Mon Mar 16 03:39:08 UTC 2026","broken","Mon Mar 16 03:39:08 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","2","注册异常校验: 非法邮箱：格式错误","tests.auth","Mon Mar 16 03:39:10 UTC 2026","broken","Mon Mar 16 03:39:10 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","2","注册异常校验: 非法邮箱：空邮箱","tests.auth","Mon Mar 16 03:39:10 UTC 2026","broken","Mon Mar 16 03:39:10 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","2","注册异常校验: 非法密码：无数字","tests.auth","Mon Mar 16 03:39:09 UTC 2026","broken","Mon Mar 16 03:39:09 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","2","注册异常校验: 合法密码：8位加混合字符","tests.auth","Mon Mar 16 03:39:08 UTC 2026","broken","Mon Mar 16 03:39:08 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","2","注册异常校验: 非法用户名：空用户名","tests.auth","Mon Mar 16 03:39:09 UTC 2026","broken","Mon Mar 16 03:39:09 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        利用数据驱动验证发帖接口的边界值与鉴权拦截逻辑
+        ","1","发帖拦截校验：边界值：标题超长","tests.posts","Mon Mar 16 03:39:10 UTC 2026","broken","Mon Mar 16 03:39:10 UTC 2026","TestPostDynamic","test_post_api","",""
+"
+        利用数据驱动验证发帖接口的边界值与鉴权拦截逻辑
+        ","2","发帖拦截校验：等价类：伪造的无效token","tests.posts","Mon Mar 16 03:39:10 UTC 2026","broken","Mon Mar 16 03:39:10 UTC 2026","TestPostDynamic","test_post_api","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","2","注册异常校验: 非法密码：16+1位，边界值校验","tests.auth","Mon Mar 16 03:39:09 UTC 2026","broken","Mon Mar 16 03:39:09 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","2","注册异常校验: 非法密码：无大写字母","tests.auth","Mon Mar 16 03:39:09 UTC 2026","broken","Mon Mar 16 03:39:09 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","2","注册异常校验: 非法密码：无小写字母","tests.auth","Mon Mar 16 03:39:09 UTC 2026","broken","Mon Mar 16 03:39:09 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"","1","test_create_dynamic_post","tests.posts","Mon Mar 16 03:39:10 UTC 2026","broken","Mon Mar 16 03:39:10 UTC 2026","TestPostDynamic","test_post_api","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","1","注册异常校验: 合法密码：16-1位加混合字符","tests.auth","Mon Mar 16 03:39:09 UTC 2026","broken","Mon Mar 16 03:39:09 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        验证正常用户的注册、登录和Token提取流程
+        ","2","test_full_auth_flow","tests.auth","Mon Mar 16 03:39:10 UTC 2026","broken","Mon Mar 16 03:39:10 UTC 2026","TestUserRegisterPositive","test_register_positive","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","1","注册异常校验: 合法密码：16位加混合字符","tests.auth","Mon Mar 16 03:39:09 UTC 2026","broken","Mon Mar 16 03:39:09 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
+"
+        利用参数化技术，批量验证后端拦截逻辑是否生效
+        ","1","注册异常校验: 合法密码：8+1位加混合字符","tests.auth","Mon Mar 16 03:39:08 UTC 2026","broken","Mon Mar 16 03:39:08 UTC 2026","TestUserRegisterNegative","test_register_negative","",""
