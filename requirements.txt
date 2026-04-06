@@ -14,6 +14,8 @@ cryptography>=3.4.7
 pytest                # 单元与集成测试框架
 requests              # 测试脚本发送 API 请求
 allure-pytest         # 生成 Allure 专业测试报告
+locust
+pytest-mock
 
 # --- 环境配置 ---
 python-dotenv         # 自动从 .env 文件加载环境变量

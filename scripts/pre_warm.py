@@ -6,9 +6,13 @@ from utils.data_factory import DataFactory
 from app.core.security import hash_password
 from app.core.config import Config
 
-def warm_up_users(count=Config.PREF_USER_COUNT, output_file="test_users.csv"):
+def warm_up_users(output_file="test_users.csv"):
+
+    count = Config.PREF_USER_COUNT
+
     conn = pymysql.connect(**Config.DB_CONFIG)
-    cursor = conn.cursor
+    cursor = conn.cursor()
+
     user_to_export = []
 
     for _ in range(count):
@@ -19,7 +23,7 @@ def warm_up_users(count=Config.PREF_USER_COUNT, output_file="test_users.csv"):
             "INSERT INTO users (username, password, email) VALUES (%s, %s, %s)",
             (user["username"], hashed_pwd, user["email"])
         )
-        user_to_export.append(user["username", user["password"]])
+        user_to_export.append([user["username"], user["password"]])
 
     conn.commit()
     conn.close()

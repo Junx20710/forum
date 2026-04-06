@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from datetime import datetime, timezone
 import pymysql
 
@@ -25,6 +25,34 @@ def create_post(req: PostCreateReq, user_id: int = Depends(get_current_user)):
             "INSERT INTO posts (user_id, title, content, created_at) VALUES (%s, %s, %s, %s)",
             (user_id, req.title, req.content, now)
         )
+        conn.commit()
         return {"code": 200, "msg": "发布成功"}
+    finally:
+        conn.close()
+
+@router.get("/list")
+def get_posts(
+    limit: int = Query(10, description="每页数量"), 
+    offset: int = Query(0, description="偏移量")
+):
+    """
+    获取帖子列表接口：
+    1. 增加分页逻辑，防止压测时一次性拉取过多数据导致内存溢出
+    2. 采用 JOIN 查询，同时返回发帖人的用户名
+    """
+    conn = get_db()
+    # 💡 使用 DictCursor 可以让返回结果直接变成字典格式，方便前端/测试解析
+    cursor = conn.cursor(pymysql.cursors.DictCursor) 
+    try:
+        sql = """
+            SELECT p.id, p.title, p.content, p.created_at, u.username 
+            FROM posts p 
+            JOIN users u ON p.user_id = u.id 
+            ORDER BY p.created_at DESC 
+            LIMIT %s OFFSET %s
+        """
+        cursor.execute(sql, (limit, offset))
+        posts = cursor.fetchall()
+        return {"code": 200, "data": posts}
     finally:
         conn.close()
