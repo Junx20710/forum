@@ -1,3 +1,4 @@
+import os
 import csv
 import uuid
 import random
@@ -6,13 +7,20 @@ import time
 import allure_commons
 from allure_commons.model2 import TestResult, Status, Label
 from allure_commons.types import LabelType
+from allure_commons.logger import AllureFileLogger
 from locust import HttpUser, task, between, events
+from locust.exception import StopUser
 
 # 💡 路径修正：对接你项目真实的 app.core.config
 from app.core.config import Config
 from utils.db_util import DBUtil
 from utils.data_factory import DataFactory
 
+results_dir = "reports"
+if not os.path.exists(results_dir):
+    os.makedirs(results_dir)
+
+allure_commons.plugin_manager.register(AllureFileLogger(results_dir))
 # ================= 1. Allure 报告桥接监听器 =================
 @events.request.add_listener
 def on_request_to_allure(request_type, name, response_time, response_length, exception, context, **kwargs):
@@ -103,17 +111,22 @@ class DailyActiveUser(HttpUser):
     def on_start(self):
         """出生逻辑：从池子里 pop 一个账号并登录"""
         if not warm_users:
-            self.environment.runner.quit()
-            return
+            print("⚠️ [Daily] 预热账号池已空，无法模拟登录！")
+            raise StopUser()
 
         # 💡 pop() 保证并发下账号不冲突
         self.user_data = warm_users.pop()
         self.headers = {}
         
         resp = self.client.post("/api/v2/user/login", json=self.user_data, name="[Daily] 预热账号登录")
-        if resp.status_code == 200:
+        if resp.status_code == 200 and resp.json().get("code") == 200:
             token = resp.json().get("data", {}).get("token")
-            self.headers = {"Authorization": f"Bearer {token}"}
+            if token:
+                self.headers = {"Authorization": f"Bearer {token}"}
+            else:
+                print(f"❌ 用户 {self.user_data['username']} 登录返回数据异常")
+        else:
+            print(f"❌ 用户 {self.user_data['username']} 登录失败: {resp.text}")
 
     @task(10)
     def view_posts(self):

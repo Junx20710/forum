@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 import re
 import pymysql
 from app.schemas.user import RegisterReq, LoginReq
@@ -40,7 +40,7 @@ def register(req: RegisterReq):
         conn.close()
 
 @router.post("/login")
-def login(req: LoginReq):
+def login(req: LoginReq, response: Response):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
@@ -54,4 +54,5 @@ def login(req: LoginReq):
         # 签发 JWT Token
         token = create_access_token(user_id=user[0])
         return {"code": 200, "data": {"token": token}}
+    response.status_code = 401
     return {"code": 401, "msg": "Invalid credentials"}
