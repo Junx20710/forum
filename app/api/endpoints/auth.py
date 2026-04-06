@@ -32,6 +32,7 @@ def register(req: RegisterReq):
             "INSERT INTO users (username, password, email) VALUES (%s, %s, %s)",
             (req.username, hashed_pwd, req.email)
         )
+        conn.commit()
         return {"code": 200, "msg": "Register Success"}
     except pymysql.err.IntegrityError:
         return {"code": 400, "msg": "Username or Email already exists"}

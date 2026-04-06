@@ -8,3 +8,4 @@ venv/
 .vscode/
 mysql_data/
 reports/
+repomix-output.md

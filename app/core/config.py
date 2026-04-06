@@ -14,3 +14,5 @@ class Config:
         "database": "forum_db",
         "autocommit": True
     }
+
+    PREF_USER_COUNT = int(os.getenv("FORUM_PERF_USER_COUNT", 500))

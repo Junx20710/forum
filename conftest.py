@@ -5,6 +5,7 @@ import uuid
 from utils.db_util import DBUtil
 import pymysql
 from app.core.config import Config
+from utils.data_factory import DataFactory
 
 # 1. 基础连接：Session 级，整个测试周期只连一次
 @pytest.fixture(scope="session")
@@ -24,13 +25,7 @@ def db_tool(db_conn):
 @pytest.fixture
 def user_factory():
     def _make_user():
-        unique_id = uuid.uuid4().hex[:6]
-        username = f"user_{unique_id}"
-        data = {
-            "username": username,
-            "password": "Password123!",
-            "email": f"{username}@test.com"
-        }
+        data = DataFactory.build_user()
         allure.attach(str(data), "工厂生成的动态数据", allure.attachment_type.TEXT)
         return data
     return _make_user
