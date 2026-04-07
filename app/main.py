@@ -36,7 +36,24 @@ async def lifespan(app: FastAPI):
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
     ''')
+    try:
+        cursor.execute("ALTER TABLE posts ADD COLUM likes_count INT DEAFAULT 0")
+    except pymysql.err.OperationalError as e:
+        if e.args[0] != 1060:  # 1060 是列已存在的错误代码
+            pass
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS post_likes (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            post_id INT,
+            UNIQUE KEY unique_like (user_id, post_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+        )
+    ''')
+
+    conn.commit()
     conn.close()
     yield  # 应用运行
 

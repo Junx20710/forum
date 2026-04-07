@@ -10,4 +10,4 @@ mysql_data/
 reports/
 repomix-output.md
 *.csv
-
+*.md
