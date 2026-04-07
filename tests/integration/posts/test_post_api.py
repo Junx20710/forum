@@ -1,7 +1,6 @@
 import pytest
 import requests
 import allure
-from app.core.config import Config
 
 
 
@@ -13,17 +12,16 @@ class TestPostDynamic:
     
 
     @allure.story("动态链路：从注册到发帖的全生命周期")
-    def test_create_dynamic_post(self, user_factory, setup_teardown_user):
+    def test_create_dynamic_post(self, user_factory, setup_teardown_user, api_client):
         # 准备数据并注册
         user = user_factory()
-        requests.post(f"{Config.BASE_URL}/api/v2/user/register", json=user, timeout=5)
+        api_client.post("/api/v2/user/register", json=user)
         setup_teardown_user.append(user["username"])
 
 
         # 登录并拿token
-        login_resp = requests.post(f"{Config.BASE_URL}/api/v2/user/login", 
-                                   json={"username": user["username"], "password": user["password"]}, 
-                                   timeout=5)
+        login_resp = api_client.post("/api/v2/user/login", 
+                                   json={"username": user["username"], "password": user["password"]})
         token = login_resp.json()["data"]["token"]
 
         # 动态发帖
@@ -33,21 +31,21 @@ class TestPostDynamic:
         }
         headers = {"Authorization": f"Bearer {token}"}
         with allure.step("发送发帖请求"):
-            resp = requests.post(f"{Config.BASE_URL}/api/v2/posts/create", 
-                                 json=post_data, headers=headers, timeout=5)
+            resp = api_client.post("/api/v2/posts/create", 
+                                 json=post_data, headers=headers)
 
         assert resp.json().get("code") == 200
 
     POST_DDT_POOL = [
         ("A"*101, "正常内容", "valid", 400, "边界值：标题超长"),
-        ("正常标题", "正常内容", "invalid", "401", "等价类：伪造的无效token"),
+        ("正常标题", "正常内容", "invalid", 401, "等价类：伪造的无效token"),
         ("   ", "   ", "valid", 400, "错误推测：标题和内容全为空格"),
     ]
 
 
     @allure.story("异常用例测试")
     @pytest.mark.parametrize("title, content, token_type, expected_code, description", POST_DDT_POOL)
-    def test_post_negative(self, user_factory, setup_teardown_user, title, content, token_type, expected_code, description):
+    def test_post_negative(self, user_factory, setup_teardown_user, api_client, title, content, token_type, expected_code, description):
         """
         利用数据驱动验证发帖接口的边界值与鉴权拦截逻辑
         """
@@ -57,11 +55,11 @@ class TestPostDynamic:
         if token_type == "valid":
             user = user_factory()
             # 注册并加进清理队列
-            requests.post(f"{Config.BASE_URL}/api/v2/user/register", json=user, timeout=5)
+            api_client.post("/api/v2/user/register", json=user)
             setup_teardown_user.append(user["username"])
 
             # 登录，且成功才会拿真token
-            login_resp = requests.post(f"{Config.BASE_URL}/api/v2/user/login",
+            login_resp = api_client.post("/api/v2/user/login",
                                         json={"username": user["username"], "password": user["password"]}, 
                                         timeout=5)
             login_data = login_resp.json()
@@ -75,14 +73,14 @@ class TestPostDynamic:
         payload = {"title": title, "content": content}
 
         with allure.step(f"发送破坏性请求:{description}"):
-            resp = requests.post(f"{Config.BASE_URL}/api/v2/posts/create",
+            resp = api_client.post("/api/v2/posts/create",
                                 json=payload, headers=headers,
                                 timeout=5)
         
 
         res_json = resp.json()
         actual_code = res_json.get("code") or resp.status_code
-        assert int(actual_code) == int(expected_code), \
+        assert actual_code == expected_code, \
             f"拦截失败！返回预期返回码 {expected_code}，实际返回: {actual_code}"
 
     

@@ -6,6 +6,8 @@ from utils.db_util import DBUtil
 import pymysql
 from app.core.config import Config
 from utils.data_factory import DataFactory
+from fastapi.testclient import TestClient
+from app.main import app
 
 # 1. 基础连接：Session 级，整个测试周期只连一次
 @pytest.fixture(scope="session")
@@ -44,3 +46,9 @@ def setup_teardown_user(db_tool):
     # 这里的代码在测试用例结束后执行
     if users_to_clean:
         db_tool.delete_users_bulk(users_to_clean)
+# 5. 全局测试客户端：取代requests：实现同进程级别的集成测试
+@pytest.fixture(scope="session")
+def api_client():
+    with allure.step("[SetUP] 初始化FastAPI 测试客户端"):
+        with TestClient(app) as client:
+            yield client

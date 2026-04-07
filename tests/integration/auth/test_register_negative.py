@@ -2,7 +2,6 @@ import uuid
 import pytest
 import requests
 import allure
-from app.core.config import Config
 
 # 每一个元组代表：（username, password, email，expected code，description）
 REGISTRATION_DDT_POOL = [
@@ -35,7 +34,7 @@ REGISTRATION_DDT_POOL = [
 class TestUserRegisterNegative:
 
     @pytest.mark.parametrize("username, password, email, expected_code, description", REGISTRATION_DDT_POOL)
-    def test_register_negative_rules(self, setup_teardown_user, username, password, email, expected_code, description):
+    def test_register_negative_rules(self, setup_teardown_user, api_client, username, password, email, expected_code, description):
         """
         利用参数化技术，批量验证后端拦截逻辑是否生效
         """
@@ -51,7 +50,7 @@ class TestUserRegisterNegative:
         }
 
         with allure.step(f"执行异常数据测试：{description}"):
-            resp = requests.post(f"{Config.BASE_URL}/api/v2/user/register", json=payload, timeout=5)
+            resp = api_client.post("/api/v2/user/register", json=payload)
             res_json = resp.json()
 
             # 只有误操作注册成功时，才需要加入清理列表
