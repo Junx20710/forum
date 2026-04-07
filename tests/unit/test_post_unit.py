@@ -22,6 +22,7 @@ def test_create_post_mock_auth_and_db(mocker):
         # mock掉数据库依赖
         mock_conn = mocker.Mock()
         mock_cursor = mocker.Mock()
+        mock_cursor.lastrowid = 1
         mocker.patch("app.api.endpoints.posts.get_db", return_value=mock_conn)
         mock_conn.cursor.return_value = mock_cursor
 

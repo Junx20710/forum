@@ -11,3 +11,5 @@ reports/
 repomix-output.md
 *.csv
 *.md
+.coverage
+htmlcov/

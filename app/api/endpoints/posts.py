@@ -26,7 +26,7 @@ def create_post(req: PostCreateReq, user_id: int = Depends(get_current_user)):
             (user_id, req.title, req.content, now)
         )
         conn.commit()
-        return {"code": 200, "msg": "发布成功"}
+        return {"code": 200, "msg": "发布成功", "data": {"post_id": cursor.lastrowid}}
     finally:
         conn.close()
 
@@ -45,7 +45,7 @@ def get_posts(
     cursor = conn.cursor(pymysql.cursors.DictCursor) 
     try:
         sql = """
-            SELECT p.id, p.title, p.content, p.created_at, u.username 
+            SELECT p.id, p.title, p.content, p.created_at, p.likes_count, u.username 
             FROM posts p 
             JOIN users u ON p.user_id = u.id 
             ORDER BY p.created_at DESC 
@@ -54,5 +54,45 @@ def get_posts(
         cursor.execute(sql, (limit, offset))
         posts = cursor.fetchall()
         return {"code": 200, "data": posts}
+    finally:
+        conn.close()
+
+
+@router.post("/{post_id}/like")
+def like_post(post_id: int, user_id: int = Depends(get_current_user)):
+    """
+    点赞/取消点赞接口（Toggle）
+    先查后改，严格包裹在事务中
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        # 事务开启
+        conn.begin()
+
+        # 检查是否已经点赞
+        cursor.execute("SELECT id FROM post_likes WHERE user_id = %s AND post_id = %s", (user_id, post_id)) 
+        existing_like = cursor.fetchone()
+
+        if existing_like:
+            # 已点赞 -> 执行取消点赞
+            like_id = existing_like[0]
+            # 新纪录
+            cursor.execute("DELETE FROM post_likes WHERE id = %s", (like_id,))
+            # 帖子赞数 -1
+            cursor.execute("UPDATE posts SET likes_count = likes_count - 1 WHERE id = %s", (post_id,))
+            msg = "取消点赞成功"
+        else:
+            # 未点赞 -> 执行点赞
+            cursor.execute("INSERT INTO post_likes (user_id, post_id) VALUES(%s, %s)", (user_id, post_id))
+            # 帖子赞数 +1
+            cursor.execute("UPDATE posts SET likes_count = likes_count + 1 WHERE id = %s", (post_id,))
+            msg = "点赞成功"
+        conn.commit()
+        return {"code": 200, "msg": msg}
+    except Exception as e:
+        # 发生任何异常都应该rollback保持likes_count和post_likes的绝对一致性
+        conn.rollback()
+        return {"code": 500, "msg": f"系统异常：{str(e)}"}
     finally:
         conn.close()

@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
         )
     ''')
     try:
-        cursor.execute("ALTER TABLE posts ADD COLUM likes_count INT DEAFAULT 0")
+        cursor.execute("ALTER TABLE posts ADD COLUMN likes_count INT DEFAULT 0")
     except pymysql.err.OperationalError as e:
         if e.args[0] != 1060:  # 1060 是列已存在的错误代码
             pass
