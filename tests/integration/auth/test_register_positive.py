@@ -1,5 +1,4 @@
 import pytest
-import requests
 import allure
 
 @allure.epic("论坛系统测试")

@@ -21,3 +21,7 @@ pytest-mock
 python-dotenv         # 自动从 .env 文件加载环境变量
 
 pytest-cov            # 代码覆盖率统计插件
+
+alembic               # 数据库版本迁移与控制工具
+
+redis                 # 高性能键值存储驱动

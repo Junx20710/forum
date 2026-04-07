@@ -1,5 +1,4 @@
 import pytest
-import requests
 import allure
 
 @allure.epic("论坛核心业务链路验证")
@@ -65,3 +64,18 @@ class TestSocialChain:
             assert target_post is not None, "帖子丢失"
             
             assert target_post["likes_count"] == 0, f"数据不一致！期望 0，实际 {target_post['likes_count']}"
+
+        # ==================== 4. 链路清理与防重放测试 ====================
+        with allure.step("7. 角色B正常登出"):
+            resp_logout = api_client.post("/api/v2/user/logout", headers=header_b)
+            assert resp_logout.status_code == 200
+
+        with allure.step("8. 角色B尝试拿着旧Token再次点赞(恶意回放测试)"):
+            resp_malicious_like = api_client.post(
+                f"/api/v2/posts/{post_id}/like",
+                headers = header_b
+            )
+
+            assert resp_malicious_like.status_code == 401
+            assert "已在其他地方登出" in resp_malicious_like.text
+    

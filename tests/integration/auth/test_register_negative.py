@@ -1,6 +1,5 @@
 import uuid
 import pytest
-import requests
 import allure
 
 # 每一个元组代表：（username, password, email，expected code，description）

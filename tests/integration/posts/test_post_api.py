@@ -1,5 +1,4 @@
 import pytest
-import requests
 import allure
 
 
@@ -60,8 +59,8 @@ class TestPostDynamic:
 
             # 登录，且成功才会拿真token
             login_resp = api_client.post("/api/v2/user/login",
-                                        json={"username": user["username"], "password": user["password"]}, 
-                                        timeout=5)
+                                        json={"username": user["username"], "password": user["password"]} 
+            )
             login_data = login_resp.json()
             if login_resp.status_code == 200 and "data" in login_data:
                 token = login_data["data"]["token"]

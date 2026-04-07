@@ -1,19 +1,37 @@
+import redis
 from fastapi import APIRouter, Depends, Query
 from datetime import datetime, timezone
 import pymysql
 
 from app.schemas.post import PostCreateReq
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, get_redis
 
 router = APIRouter()
 
 @router.post("/create")
-def create_post(req: PostCreateReq, user_id: int = Depends(get_current_user)):
+def create_post(req: PostCreateReq,
+                 user_id: int = Depends(get_current_user),
+                r: redis.Redis = Depends(get_redis)                 
+):
     """
     发帖接口：
-    1. 通过 Depends(get_current_user) 自动处理 JWT 鉴权
-    2. 只有校验通过的请求才会进入此逻辑
+    1. 防刷：限定同一个用户十秒内最多发3篇帖子
+    2. 通过 Depends(get_current_user) 自动处理 JWT 鉴权
+    3. 只有校验通过的请求才会进入此逻辑
     """
+    # 防刷请
+    rate_key = f"rate_limit:post:{user_id}"
+    current_count = r.incr(rate_key)
+    
+    if current_count == 1:
+        #第一次触发的时候设置 10s 过期
+        r.expire(rate_key, 10)
+
+    if current_count > 3:
+        #直接拦截，保护数据库不被高并发压垮
+        return {"code": 429, "msg": "发帖太快啦，请休息一下（十秒后再试）"}
+    
+    
     conn = get_db()
     cursor = conn.cursor()
     try:

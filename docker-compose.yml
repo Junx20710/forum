@@ -13,3 +13,8 @@ services:
     volumes:
       # 将容器内的数据映射到当前目录下的 mysql_data 文件夹
       - ./mysql_data:/var/lib/mysql  
+  redis:
+    image: redis:7.0-alpine
+    container_name: forum_redis
+    ports:
+      - "6379:6379"

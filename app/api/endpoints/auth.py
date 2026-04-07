@@ -1,12 +1,16 @@
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response, Depends, Header
 import re
+import redis
+import jwt
+from datetime import datetime, timezone
 import pymysql
 from app.schemas.user import RegisterReq, LoginReq
 from app.core.security import (
     hash_password, verify_password, create_access_token,
     PWD_PATTERN, USERNAME_PATTERN, EMAIL_PATTERN
 )
-from app.api.deps import get_db
+from app.core.config import Config
+from app.api.deps import get_db, get_redis
 
 router = APIRouter()
 
@@ -56,3 +60,26 @@ def login(req: LoginReq, response: Response):
         return {"code": 200, "data": {"token": token}}
     response.status_code = 401
     return {"code": 401, "msg": "Invalid credentials"}
+
+@router.post("/logout")
+def logout(authorization: str = Header(None), r:redis.Redis = Depends(get_redis)):
+    if not authorization or not authorization.startswith("Bearer "):
+        return {"code": 401, "msg": "无有效token"}
+    token = authorization.split(" ")[1].strip()
+
+    try:
+        # 解析token拿到后的到期时间
+        payload = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
+        exp = payload.get('exp')
+        now = datetime.now(timezone.utc).timestamp()
+
+        # 计算剩余寿命
+        ttl = int(exp - now)
+        if ttl > 0:
+            # 将token压入Reids黑名单，并设置TTL
+            r.setex(f"blacklist:{token}", ttl ,"1")
+    except Exception:
+        return {"code": 401, "msg": "无效的Token或已过期"}
+
+    return {"code": 200, "msg": "注销成功"}
+

@@ -11,7 +11,6 @@ from allure_commons.logger import AllureFileLogger
 from locust import HttpUser, task, between, events
 from locust.exception import StopUser
 
-# 💡 路径修正：对接你项目真实的 app.core.config
 from app.core.config import Config
 from utils.db_util import DBUtil
 from utils.data_factory import DataFactory
@@ -106,7 +105,8 @@ class DayOneRushUser(HttpUser):
 class DailyActiveUser(HttpUser):
     """模拟正常老用户，直接从预热池拿账号，重点测发帖写入性能"""
     weight = 5  # 权重 5（老用户是主力）
-    wait_time = between(2, 5)
+    # 缩短时间间隔，增加请求频率，触发redis限流逻辑，验证预热数据的有效性
+    wait_time = between(1, 3)
 
     def on_start(self):
         """出生逻辑：从池子里 pop 一个账号并登录"""
@@ -123,19 +123,17 @@ class DailyActiveUser(HttpUser):
             token = resp.json().get("data", {}).get("token")
             if token:
                 self.headers = {"Authorization": f"Bearer {token}"}
-            else:
-                print(f"❌ 用户 {self.user_data['username']} 登录返回数据异常")
-        else:
-            print(f"❌ 用户 {self.user_data['username']} 登录失败: {resp.text}")
+    def on_stop(self):
+        if self.headers:
+            self.client.post("/api/v2/user/logout", headers=self.headers, name="[Daily] 预热账号登出")
 
     @task(10)
     def view_posts(self):
         """模拟刷帖（高频）"""
         self.client.get("/api/v2/posts/list", name="[Daily] 查看帖子列表")
 
-    @task(2)
+    @task(5) # 提高发帖频率，逼出限流
     def create_post(self):
-        """模拟发帖（低频）"""
         if not self.headers: return
         
         payload = {
@@ -143,3 +141,14 @@ class DailyActiveUser(HttpUser):
             "content": "性能测试内容填充..."
         }
         self.client.post("/api/v2/posts/create", json=payload, headers=self.headers, name="[Daily] 发布新帖子")
+
+        with self.client.post("/api/v2/posts/create", json=payload, headers=self.headers, name="[Daily] 发布新帖子", catch_response=True) as resp:
+            # 200 是真正的业务成功
+            if resp.status_code == 200:
+                resp.success()
+            # 💡 429 是 Redis 成功拦截了！在压测中这属于防刷策略生效，我们把它标记为绿色（成功），并单独记录
+            elif resp.status_code == 429:
+                resp.success() 
+                # 你会在日志里看到这个，但 Allure 报告里不会报错
+            else:
+                resp.failure(f"崩溃异常! 状态码: {resp.status_code}, 内容: {resp.text}")
