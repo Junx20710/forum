@@ -109,7 +109,6 @@ jobs:
       
       - name: Run Locust Load Test
         run: |
-          # Locust 的报告输出在 reports 目录
           locust -f tests/performance/locustfile.py --headless -u 100 -r 10 -t 60s --host http://127.0.0.1:8000
 
       - name: Upload Server Logs on Failure
@@ -124,7 +123,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: allure-locust
-          path: reports
+          path: allure-results
           retention-days: 1
   
   # ================= 阶段三：聚合报告与发布 =================
