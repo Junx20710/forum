@@ -15,7 +15,7 @@ from app.core.config import Config
 from utils.db_util import DBUtil
 from utils.data_factory import DataFactory
 
-results_dir = "reports"
+results_dir = "allure-results"
 if not os.path.exists(results_dir):
     os.makedirs(results_dir)
 

@@ -13,3 +13,4 @@ repomix-output.md
 *.md
 .coverage
 htmlcov/
+*.xml

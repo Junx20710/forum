@@ -1,18 +1,70 @@
-name: Forum API Automation CI
+name: Forum API CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 permissions:
-  contents: write
+  contents: write # 允许推送 gh-pages 分支
 
 jobs:
-  test:
+  # ================= 阶段一：功能自动化测试 =================
+  api-functional-tests:
+    name: Pytest Functional and Coverage
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root  
+          MYSQL_DATABASE: forum_db
+        ports:
+          - 3309:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+      redis:
+        image: redis:7.0-alpine
+        ports:
+          - 6379:6379
 
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Database Migrations
+        run: alembic upgrade head
+
+      - name: Run Pytest & Generate Coverage
+        run: |
+          export PYTHONPATH="."
+          pytest tests/unit tests/integration --cov=app --cov-report=term-missing --alluredir=./allure-results
+
+      - name: Upload Functional Results
+        if: always() 
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-functional
+          path: allure-results
+          retention-days: 1
+
+  # ================= 阶段二：压力测试 =================
+  performance-test:
+    name: Locust Performance Load
+    needs: api-functional-tests
+    runs-on: ubuntu-latest
     services:
       mysql:
         image: mysql:8.0
@@ -20,62 +72,100 @@ jobs:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: forum_db
         ports:
-          - 3309:3306 
+          - 3309:3306
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="mysqladmin ping -h localhost"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
-
+      redis:
+        image: redis:7.0-alpine
+        ports: 
+          - 6379:6379
+          
     steps:
-    - name: 检出代码
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0 
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
 
-    - name: 设置 Python 3.9 环境
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-        cache: 'pip'
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Run Database Migrations
+        run: alembic upgrade head
 
-    - name: 安装项目依赖
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Pre-warm Test Data
+        run: |
+          export PYTHONPATH="."
+          python scripts/pre_warm.py
+      
+      - name: Start FastAPI Server
+        run: |
+          export PYTHONPATH="."
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 > server.log 2>&1 &
+          sleep 5
+      
+      - name: Run Locust Load Test
+        run: |
+          # Locust 的报告输出在 reports 目录
+          locust -f tests/performance/locustfile.py --headless -u 100 -r 10 -t 60s --host http://127.0.0.1:8000
 
-    - name: 启动后端并运行测试
-      env:
-        SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
-        # 💡 设置 PYTHONPATH 确保机器人能找到 app 包
-        PYTHONPATH: .
-      run: |
-        # 💡 关键改动：路径从 main:app 变为 app.main:app
-        nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > backend.log 2>&1 & 
-        
-        sleep 5
-
-        echo "================ 后端启动日志 ================"
-        cat backend.log
-        echo "============================================="
-        sleep 10
-        # 即使测试失败也继续，保证生成报告
-        pytest --alluredir=./allure-results || true 
-
-    - name: 渲染 Allure 报告
-      uses: simple-elf/allure-report-action@master
-      if: always()
-      id: allure-report
-      with:
-        report_dir: allure-results
-        gh_pages: gh-pages
-        allure_report: allure-report
-        allure_history: allure-history
-    
-    - name: 推送报告到 gh-pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: always()
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_branch: gh-pages
-        publish_dir: allure-history
+      - name: Upload Server Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fastapi-server-logs
+          path: server.log
+      
+      - name: Upload Locust Allure Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-locust
+          path: reports
+          retention-days: 1
+  
+  # ================= 阶段三：聚合报告与发布 =================
+  generate-report:
+    name: Generate and Publish Allure Report
+    needs: [api-functional-tests, performance-test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download Functional Results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-functional
+          path: all-allure-results
+      
+      - name: Download Locust Results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-locust
+          path: all-allure-results
+      
+      - name: Get Allure history
+        uses: actions/checkout@v4
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+      
+      - name: Render Allure Report
+        uses: simple-elf/allure-report-action@master
+        id: allure-report
+        with:
+          allure_results: all-allure-results
+          gh_pages: gh-pages
+          allure_report: allure-report
+          allure_history: allure-history
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-history
