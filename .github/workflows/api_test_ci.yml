@@ -50,7 +50,11 @@ jobs:
       - name: Run Pytest & Generate Coverage
         run: |
           export PYTHONPATH="."
-          pytest tests/unit tests/integration --cov=app --cov-report=term-missing --alluredir=./allure-results
+          pytest tests/unit tests/integration \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-fail-under=90 \
+            --alluredir=./allure-results
 
       - name: Upload Functional Results
         if: always() 
@@ -109,7 +113,12 @@ jobs:
       
       - name: Run Locust Load Test
         run: |
-          locust -f tests/performance/locustfile.py --headless -u 100 -r 10 -t 60s --host http://127.0.0.1:8000
+          locust -f tests/performance/locustfile.py \
+            --headless \
+            -u 100 \
+            -r 10 \
+            -t 60s \
+            --host http://127.0.0.1:8000
 
       - name: Upload Server Logs on Failure
         if: failure()

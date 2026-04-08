@@ -10,7 +10,6 @@ mysql_data/
 reports/
 repomix-output.md
 *.csv
-*.md
 .coverage
 htmlcov/
 *.xml
