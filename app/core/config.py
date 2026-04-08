@@ -15,6 +15,6 @@ class Config:
         "autocommit": True
     }
 
-    PREF_USER_COUNT = int(os.getenv("FORUM_PERF_USER_COUNT", 500))
+    PREF_USER_COUNT = int(os.getenv("FORUM_PERF_USER_COUNT", 1200))
 
     REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")

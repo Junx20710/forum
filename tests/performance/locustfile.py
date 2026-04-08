@@ -8,7 +8,7 @@ import allure_commons
 from allure_commons.model2 import TestResult, Status, Label
 from allure_commons.types import LabelType
 from allure_commons.logger import AllureFileLogger
-from locust import HttpUser, task, between, events
+from locust import FastHttpUser, task, between, events
 from locust.exception import StopUser
 
 from app.core.config import Config
@@ -77,7 +77,7 @@ def on_test_stop(environment, **kwargs):
 
 
 # ================= 4. 用户画像 A：首日注册登录洪峰 (Rush) =================
-class DayOneRushUser(HttpUser):
+class DayOneRushUser(FastHttpUser):
     """模拟新用户涌入，主要测试注册和登录接口的 CPU 消耗（Bcrypt 哈希）"""
     weight = 1  # 权重 1
     wait_time = between(0.1, 0.5)  # 连点器级别的频率
@@ -102,7 +102,7 @@ class DayOneRushUser(HttpUser):
 
 
 # ================= 5. 用户画像 B：日常权重行为 (Daily) =================
-class DailyActiveUser(HttpUser):
+class DailyActiveUser(FastHttpUser):
     """模拟正常老用户，直接从预热池拿账号，重点测发帖写入性能"""
     weight = 5  # 权重 5（老用户是主力）
     # 缩短时间间隔，增加请求频率，触发redis限流逻辑，验证预热数据的有效性
@@ -110,13 +110,16 @@ class DailyActiveUser(HttpUser):
 
     def on_start(self):
         """出生逻辑：从池子里 pop 一个账号并登录"""
+
+        self.headers = {}
+        
         if not warm_users:
             print("⚠️ [Daily] 预热账号池已空，无法模拟登录！")
             raise StopUser()
 
         # 💡 pop() 保证并发下账号不冲突
         self.user_data = warm_users.pop()
-        self.headers = {}
+        
         
         resp = self.client.post("/api/v2/user/login", json=self.user_data, name="[Daily] 预热账号登录")
         if resp.status_code == 200 and resp.json().get("code") == 200:
