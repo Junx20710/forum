@@ -1,5 +1,9 @@
 version: '3.8'
+
 services:
+  # ============================================
+  # MySQL 数据库服务
+  # ============================================
   mysql:
     image: mysql:8.0
     container_name: forum_mysql
@@ -7,14 +11,68 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: forum_db
     ports:
-      # 宿主机端口:容器端口
       - "3309:3306"
     command: --default-authentication-plugin=mysql_native_password
     volumes:
-      # 将容器内的数据映射到当前目录下的 mysql_data 文件夹
-      - ./mysql_data:/var/lib/mysql  
+      - ./mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - forum-network
+
+  # ============================================
+  # Redis 缓存服务
+  # ============================================
   redis:
     image: redis:7.0-alpine
     container_name: forum_redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - forum-network
+
+  # ============================================
+  # Forum API 应用服务
+  # ============================================
+  api:
+    build: .
+    container_name: forum_api
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # 读取 .env 文件中的配置
+      FORUM_HOST: 0.0.0.0
+      FORUM_PORT: 8000
+      DB_HOST: mysql          # 使用 Docker Compose 服务名
+      DB_PORT: 3306           # 容器内端口
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: forum_db
+      REDIS_URL: redis://redis:6379/0  # 使用 Docker Compose 服务名
+      PYTHONUNBUFFERED: 1      # 实时打印日志
+    ports:
+      - "8000:8000"
+    networks:
+      - forum-network
+    volumes:
+      # 开发环境：挂载源代码便于调试
+      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# ============================================
+# 网络配置
+# ============================================
+networks:
+  forum-network:
+    driver: bridge
