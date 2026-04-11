@@ -15,3 +15,4 @@ htmlcov/
 *.xml
 *.txt
 *.md
+gen_docs.py
