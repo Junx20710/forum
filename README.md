@@ -57,7 +57,7 @@ forum/
 ### 方式一：Docker（推荐）
 
 ```bash
-git clone https://github.com/your-username/forum.git
+git clone https://github.com/Junx20710/forum.git
 cd forum
 cp .env.example .env          # 创建环境配置
 docker-compose up -d          # 启动 MySQL + Redis + API
