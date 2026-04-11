@@ -14,3 +14,4 @@ repomix-output.md
 htmlcov/
 *.xml
 *.txt
+*.md
